@@ -4,6 +4,9 @@ import 'widgets/custom_tab_bar.dart';
 import 'widgets/promo_carousel.dart';
 import 'widgets/category_grid.dart';
 import 'widgets/popular_products_section.dart';
+import 'pages/search_page.dart';
+import 'pages/favorites_page.dart';
+import 'pages/profile_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,7 +42,7 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
       CarouselSliderController();
 
   List<String> carouselImages = [
-    "https://png.pngtree.com/template/20231215/ourlarge/pngtree-clothing-sweatshirt-female-model-fashion-yellow-modern-simple-banner-banner-home-image_1982035.png",
+    "https://img.freepik.com/free-psd/fashion-clothes-banner-template_23-2148578502.jpg",
     "https://cdn.news2day.co.kr/data2/content/image/2019/09/23/20190923306831.jpg",
     "https://images.jkn.co.kr/data/images/full/904120/g-_-600-jpg.jpg?w=600",
   ];
@@ -126,11 +129,11 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
       case 0:
         return _buildHomePage();
       case 1:
-        return _buildSearchPage();
+        return const SearchPage();
       case 2:
-        return _buildFavoritesPage();
+        return const FavoritesPage();
       case 3:
-        return _buildProfilePage();
+        return const ProfilePage();
       default:
         return _buildHomePage();
     }
@@ -187,41 +190,37 @@ class _MainPageState extends State<MainPage> with TickerProviderStateMixin {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          const SizedBox(width: 60), // 공간 확보
-          const Text(
-            'My Best Fit',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+          // 중앙 정렬된 타이틀
+          Center(
+            child: Text(
+              'My Best Fit',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
-          const Icon(Icons.shopping_cart, color: Colors.black, size: 24),
+          // 오른쪽 장바구니 아이콘
+          Positioned(
+            right: 0,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Icon(Icons.shopping_cart, color: Colors.black, size: 24),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchPage() {
-    return const Center(child: Text('검색 페이지', style: TextStyle(fontSize: 24)));
-  }
-
-  Widget _buildFavoritesPage() {
-    return const Center(
-      child: Text('즐겨찾기 페이지', style: TextStyle(fontSize: 24)),
-    );
-  }
-
-  Widget _buildProfilePage() {
-    return const Center(child: Text('프로필 페이지', style: TextStyle(fontSize: 24)));
-  }
-
   Widget _buildBottomNavigationBar() {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
+      backgroundColor: Colors.white,
       currentIndex: _currentIndex,
       onTap: (index) {
         setState(() {

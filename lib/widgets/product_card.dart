@@ -85,7 +85,7 @@ class ProductCard extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.fromLTRB(6.0, 6.0, 6.0, 1.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -94,7 +94,7 @@ class ProductCard extends StatelessWidget {
                   Text(
                     brandName,
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 12,
                       color: Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
@@ -104,7 +104,7 @@ class ProductCard extends StatelessWidget {
                   Text(
                     productName,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
@@ -117,28 +117,28 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 1,
+                          horizontal: 6,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.red,
-                          borderRadius: BorderRadius.circular(3),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           '$discount%',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 8,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           price,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Colors.black,
                           ),
@@ -155,18 +155,18 @@ class ProductCard extends StatelessWidget {
                         child: Text(
                           '관심 $likes',
                           style: TextStyle(
-                            fontSize: 8,
+                            fontSize: 10,
                             color: Colors.grey[600],
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           '리뷰 $reviews',
                           style: TextStyle(
-                            fontSize: 8,
+                            fontSize: 10,
                             color: Colors.grey[600],
                           ),
                           overflow: TextOverflow.ellipsis,

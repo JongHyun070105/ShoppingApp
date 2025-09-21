@@ -12,8 +12,9 @@ class CustomTabBar extends StatelessWidget {
         controller: tabController,
         indicator: const UnderlineTabIndicator(
           borderSide: BorderSide(color: Colors.black, width: 3),
-          insets: EdgeInsets.zero,
+          insets: EdgeInsets.symmetric(horizontal: 0),
         ),
+        indicatorSize: TabBarIndicatorSize.tab,
         labelColor: Colors.black,
         unselectedLabelColor: Colors.grey,
         labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

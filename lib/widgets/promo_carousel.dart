@@ -17,14 +17,13 @@ class PromoCarousel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 250,
-      margin: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+      margin: const EdgeInsets.fromLTRB(0, 0, 0, 8),
       child: CarouselSlider(
         carouselController: carouselController,
         items: images.map((imageUrl) {
           return Container(
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(6)),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
