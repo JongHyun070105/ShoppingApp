@@ -22,11 +22,13 @@ class _MainPageState extends State<MainPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   int _currentIndex = 0;
   late TabController _tabController;
+  late ScrollController _homeScrollController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _homeScrollController = ScrollController();
     WidgetsBinding.instance.addObserver(this);
 
     // 앱 상태 초기화
@@ -38,6 +40,7 @@ class _MainPageState extends State<MainPage>
   @override
   void dispose() {
     _tabController.dispose();
+    _homeScrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -55,15 +58,42 @@ class _MainPageState extends State<MainPage>
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          HomeTab(),
-          SearchPage(),
-          FavoritesPage(),
-          ProfilePage(),
+        children: [
+          HomeTab(scrollController: _homeScrollController),
+          const SearchPage(),
+          const FavoritesPage(),
+          const ProfilePage(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
+      floatingActionButton: _currentIndex == 0 ? _buildScrollToTopFAB() : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniEndFloat,
     );
+  }
+
+  Widget _buildScrollToTopFAB() {
+    return FloatingActionButton(
+      onPressed: () {
+        // HomeTab의 스크롤 컨트롤러를 통해 맨 위로 스크롤
+        _scrollToTop();
+      },
+      backgroundColor: const Color(AppConstants.primaryColorValue),
+      foregroundColor: Colors.white,
+      mini: true,
+      elevation: 4,
+      child: const Icon(Icons.keyboard_arrow_up, size: 24),
+    );
+  }
+
+  void _scrollToTop() {
+    // 직접 스크롤 컨트롤러를 사용하여 맨 위로 스크롤R
+    if (_homeScrollController.hasClients) {
+      _homeScrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   Widget _buildBottomNavigationBar() {
@@ -96,7 +126,9 @@ class _MainPageState extends State<MainPage>
 
 /// 홈 탭 - 메인 페이지의 홈 섹션
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key});
+  final ScrollController scrollController;
+
+  const HomeTab({super.key, required this.scrollController});
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -117,6 +149,14 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  void scrollToTop() {
+    widget.scrollController.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,7 +168,10 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: const [HomeContent(), RankingContent()],
+              children: [
+                HomeContent(scrollController: widget.scrollController),
+                RankingContent(scrollController: widget.scrollController),
+              ],
             ),
           ),
         ],

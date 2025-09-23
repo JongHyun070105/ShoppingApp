@@ -9,7 +9,9 @@ import '../promo_carousel.dart';
 
 /// 홈 화면의 메인 콘텐츠를 담당하는 위젯
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+  final ScrollController? scrollController;
+
+  const HomeContent({super.key, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +29,7 @@ class HomeContent extends StatelessWidget {
               return false;
             },
             child: SingleChildScrollView(
+              controller: scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 children: [
@@ -55,6 +58,7 @@ class HomeContent extends StatelessWidget {
             return false; // 다른 이벤트는 전달
           },
           child: SingleChildScrollView(
+            controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [

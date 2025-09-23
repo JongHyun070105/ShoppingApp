@@ -5,7 +5,9 @@ import '../popular_products_section.dart';
 
 /// 랭킹 화면의 콘텐츠를 담당하는 위젯
 class RankingContent extends StatelessWidget {
-  const RankingContent({super.key});
+  final ScrollController? scrollController;
+
+  const RankingContent({super.key, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +28,7 @@ class RankingContent extends StatelessWidget {
             return false; // 다른 이벤트는 전달
           },
           child: SingleChildScrollView(
+            controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               children: [
