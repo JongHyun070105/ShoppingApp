@@ -86,7 +86,7 @@ class _MainPageState extends State<MainPage>
   }
 
   void _scrollToTop() {
-    // 직접 스크롤 컨트롤러를 사용하여 맨 위로 스크롤R
+    // 직접 스크롤 컨트롤러를 사용하여 맨 위로 스크롤
     if (_homeScrollController.hasClients) {
       _homeScrollController.animateTo(
         0.0,
