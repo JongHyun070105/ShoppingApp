@@ -4,11 +4,15 @@ import '../models/product.dart';
 class ProductOptionDialog extends StatefulWidget {
   final Product product;
   final Function(String size, String color, int quantity) onAddToCart;
+  final String buttonText;
+  final bool shouldCloseDialog;
 
   const ProductOptionDialog({
     super.key,
     required this.product,
     required this.onAddToCart,
+    this.buttonText = '장바구니 담기',
+    this.shouldCloseDialog = true,
   });
 
   @override
@@ -34,10 +38,21 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: Colors.transparent,
       child: Container(
-        color: Colors.white,
         constraints: const BoxConstraints(maxHeight: 600),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -45,10 +60,10 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Colors.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
               ),
               child: Row(
@@ -152,10 +167,20 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
 
             // 하단 버튼들
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -176,14 +201,14 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                     child: ElevatedButton(
                       onPressed: _selectedSize != null && _selectedColor != null
                           ? () {
-                              final selectedOptions =
-                                  '$_selectedColor $_selectedSize';
                               widget.onAddToCart(
                                 _selectedSize!,
                                 _selectedColor!,
                                 _quantity,
                               );
-                              Navigator.pop(context);
+                              if (widget.shouldCloseDialog) {
+                                Navigator.pop(context);
+                              }
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -191,12 +216,13 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        elevation: 0,
                       ),
-                      child: const Text(
-                        '장바구니 담기',
-                        style: TextStyle(
+                      child: Text(
+                        widget.buttonText,
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -235,27 +261,34 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
               onTap: () => onChanged(option),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
+                  horizontal: 20,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xff1957ee)
-                      : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(20),
+                  color: isSelected ? const Color(0xff1957ee) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected
                         ? const Color(0xff1957ee)
                         : Colors.grey[300]!,
-                    width: 1,
+                    width: 1.5,
                   ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xff1957ee).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   option,
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? Colors.white : Colors.grey[800],
                   ),
                 ),
               ),
@@ -287,34 +320,51 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                     }
                   : null,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: _quantity > 1 ? Colors.grey[100] : Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
+                  color: _quantity > 1 ? Colors.white : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _quantity > 1
+                        ? Colors.grey[300]!
+                        : Colors.grey[200]!,
+                    width: 1.5,
+                  ),
+                  boxShadow: _quantity > 1
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Icon(
-                  Icons.remove,
-                  color: _quantity > 1 ? Colors.black87 : Colors.grey,
+                  Icons.remove_rounded,
+                  color: _quantity > 1 ? Colors.grey[700] : Colors.grey[400],
+                  size: 20,
                 ),
               ),
             ),
             // 수량 표시
             Container(
               width: 80,
-              height: 40,
+              height: 48,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!, width: 1.5),
               ),
               child: Center(
                 child: Text(
                   '$_quantity',
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
               ),
@@ -327,14 +377,25 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                 });
               },
               child: Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!, width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.add, color: Colors.black87),
+                child: Icon(
+                  Icons.add_rounded,
+                  color: Colors.grey[700],
+                  size: 20,
+                ),
               ),
             ),
           ],

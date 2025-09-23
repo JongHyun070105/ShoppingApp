@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 import '../pages/product_detail.dart';
-import '../pages/cart_page.dart';
 import '../utils/price_formatter.dart';
 import 'product_option_dialog.dart';
 
@@ -14,7 +13,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(
+    return Consumer<OptimizedAppState>(
       builder: (context, appState, child) {
         final isFavorite = appState.isFavorite(product.id ?? 0);
 
@@ -135,7 +134,7 @@ class ProductCard extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -198,7 +197,7 @@ class ProductCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       // 관심/리뷰 정보
-                      Consumer<AppState>(
+                      Consumer<OptimizedAppState>(
                         builder: (context, appState, child) {
                           final favoriteCount = appState.getFavoriteCount(
                             product.id ?? 0,
@@ -226,7 +225,7 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  void _showOptionDialog(BuildContext context, AppState appState) {
+  void _showOptionDialog(BuildContext context, OptimizedAppState appState) {
     showDialog(
       context: context,
       builder: (context) => ProductOptionDialog(

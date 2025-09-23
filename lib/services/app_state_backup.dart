@@ -4,11 +4,11 @@ import '../models/cart_item.dart';
 import 'supabase_service.dart';
 import 'recent_products_service.dart';
 
-class AppState extends ChangeNotifier {
+class OptimizedAppState extends ChangeNotifier {
   // 싱글톤 인스턴스
-  static final AppState _instance = AppState._internal();
-  factory AppState() => _instance;
-  AppState._internal();
+  static final OptimizedAppState _instance = OptimizedAppState._internal();
+  factory OptimizedAppState() => _instance;
+  OptimizedAppState._internal();
 
   // 데이터 상태
   List<Product> _allProducts = [];
@@ -17,7 +17,6 @@ class AppState extends ChangeNotifier {
   final Map<int, bool> _favorites = {};
   final Map<int, int> _reviewCounts = {}; // 상품별 리뷰 개수
   String _selectedCategory = '전체'; // 선택된 카테고리
-  String _searchQuery = ''; // 검색어
   List<CartItem> _cartItems = []; // 장바구니 아이템들
   final int _currentUserId = 1; // 현재 사용자 ID (임시)
 
@@ -27,18 +26,37 @@ class AppState extends ChangeNotifier {
   List<Product> get favoriteProducts => _allProducts
       .where((product) => product.id != null && _favorites[product.id!] == true)
       .toList();
+
+  // 인기 상품 목록 (좋아요 + 리뷰 개수 기준 정렬)
+  List<Product> get popularProducts => _getPopularProducts();
   bool get isLoading => _isLoading;
   String get selectedCategory => _selectedCategory;
-  String get searchQuery => _searchQuery;
   List<CartItem> get cartItems => _cartItems;
   int get cartItemCount =>
       _cartItems.fold(0, (sum, item) => sum + item.quantity);
   bool isFavorite(int productId) => _favorites[productId] ?? false;
 
-  // 특정 상품의 좋아요 개수 가져오기 (실제로는 DB에서 가져와야 하지만 임시로 즐겨찾기 상태 기반)
+  // 특정 상품의 좋아요 개수 가져오기 (DB의 likes 필드 사용)
   String getFavoriteCount(int productId) {
-    final isFav = isFavorite(productId);
-    return isFav ? '1+' : '0';
+    // 상품을 찾아서 실제 likes 값 사용
+    final product = _allProducts.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => Product(
+        id: 0,
+        productName: '',
+        brandName: '',
+        price: '0',
+        discount: '0',
+        imageUrl: '',
+        category: '',
+        likes: '0',
+        reviews: '0',
+        isFavorite: false,
+      ),
+    );
+
+    final likesCount = int.tryParse(product.likes) ?? 0;
+    return likesCount.toString();
   }
 
   // 특정 상품의 리뷰 개수 가져오기
@@ -52,11 +70,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 카테고리 및 검색어별 필터링된 상품 목록 반환
+  // 카테고리별 필터링된 상품 목록 반환 (검색어 필터링 제거)
   List<Product> _getFilteredProducts() {
     var filteredProducts = _allProducts;
 
-    // 1. 카테고리 필터링
+    // 카테고리 필터링
     if (_selectedCategory != '전체') {
       filteredProducts = filteredProducts.where((product) {
         // 카테고리 필드가 있으면 카테고리로 필터링
@@ -110,15 +128,35 @@ class AppState extends ChangeNotifier {
       }).toList();
     }
 
-    // 2. 검색어 필터링
-    if (_searchQuery.isNotEmpty) {
-      filteredProducts = filteredProducts.where((product) {
-        final query = _searchQuery.toLowerCase();
-        return product.productName.toLowerCase().contains(query) ||
-            product.brandName.toLowerCase().contains(query) ||
-            (product.category?.toLowerCase().contains(query) ?? false);
-      }).toList();
-    }
+    return filteredProducts;
+  }
+
+  // 인기 상품 목록 반환 (좋아요 + 리뷰 개수 기준 정렬)
+  List<Product> _getPopularProducts() {
+    var filteredProducts = _getFilteredProducts();
+
+    // 인기도 점수 계산하여 정렬
+    filteredProducts.sort((a, b) {
+      final aId = a.id;
+      final bId = b.id;
+
+      if (aId == null || bId == null) return 0;
+
+      // 좋아요 개수 (실제로는 DB의 likes 필드 사용, 임시로 즐겨찾기 상태 사용)
+      final aLikes = int.tryParse(a.likes) ?? 0;
+      final bLikes = int.tryParse(b.likes) ?? 0;
+
+      // 리뷰 개수
+      final aReviews = _reviewCounts[aId] ?? 0;
+      final bReviews = _reviewCounts[bId] ?? 0;
+
+      // 인기도 점수 계산 (좋아요 * 2 + 리뷰 * 1)
+      final aPopularity = (aLikes * 2) + aReviews;
+      final bPopularity = (bLikes * 2) + bReviews;
+
+      // 내림차순 정렬 (인기 순)
+      return bPopularity.compareTo(aPopularity);
+    });
 
     return filteredProducts;
   }
@@ -126,18 +164,6 @@ class AppState extends ChangeNotifier {
   // 카테고리 설정
   void setCategory(String category) {
     _selectedCategory = category;
-    notifyListeners();
-  }
-
-  // 검색어 설정
-  void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
-  }
-
-  // 검색어 초기화
-  void clearSearch() {
-    _searchQuery = '';
     notifyListeners();
   }
 
@@ -249,7 +275,7 @@ class AppState extends ChangeNotifier {
       _initializeFavorites(products);
 
       // 리뷰 개수 초기화
-      _initializeReviewCounts(products);
+      await _initializeReviewCounts(products);
 
       // 최근 본 상품 로드
       _recentProducts = await RecentProductsService.getRecentProducts();
@@ -273,12 +299,31 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // 리뷰 개수 초기화
-  void _initializeReviewCounts(List<Product> products) {
-    for (final product in products) {
-      if (product.id != null) {
-        // 상품 모델의 리뷰 개수를 기본값으로 설정
-        _reviewCounts[product.id!] = int.tryParse(product.reviews) ?? 0;
+  // 리뷰 개수 초기화 (실제 DB에서 리뷰 개수 가져오기)
+  Future<void> _initializeReviewCounts(List<Product> products) async {
+    try {
+      // 모든 리뷰를 한 번에 가져와서 상품별로 그룹화
+      final allReviews = await SupabaseService.getAllReviews();
+
+      // 리뷰 개수 초기화
+      _reviewCounts.clear();
+
+      // 각 상품별로 리뷰 개수 계산
+      for (final product in products) {
+        if (product.id != null) {
+          final productReviews = allReviews
+              .where((review) => review.productId == product.id)
+              .toList();
+          _reviewCounts[product.id!] = productReviews.length;
+        }
+      }
+    } catch (e) {
+      print('Error loading review counts: $e');
+      // 에러 시 모든 상품의 리뷰 개수를 0으로 설정
+      for (final product in products) {
+        if (product.id != null) {
+          _reviewCounts[product.id!] = 0;
+        }
       }
     }
   }
@@ -292,6 +337,10 @@ class AppState extends ChangeNotifier {
 
       // 즉시 로컬 상태 업데이트 (UI 반응성 향상)
       _favorites[productId] = newStatus;
+
+      // 로컬 상품 데이터의 좋아요 개수도 업데이트
+      _updateLocalProductLikes(productId, newStatus);
+
       notifyListeners();
 
       // Supabase에서 토글
@@ -301,10 +350,38 @@ class AppState extends ChangeNotifier {
         print('Error updating favorite in Supabase: $e');
         // 에러 시 원래 상태로 되돌리기
         _favorites[productId] = currentStatus;
+        _updateLocalProductLikes(productId, currentStatus);
         notifyListeners();
       }
     } catch (e) {
       print('Error toggling favorite: $e');
+    }
+  }
+
+  // 로컬 상품 데이터의 좋아요 개수 업데이트
+  void _updateLocalProductLikes(int productId, bool isLiked) {
+    final productIndex = _allProducts.indexWhere(
+      (product) => product.id == productId,
+    );
+    if (productIndex != -1) {
+      final currentProduct = _allProducts[productIndex];
+      final currentLikes = int.tryParse(currentProduct.likes) ?? 0;
+      final newLikes = isLiked ? currentLikes + 1 : currentLikes - 1;
+      final finalLikes = newLikes < 0 ? 0 : newLikes; // 음수 방지
+
+      // 새로운 상품 객체 생성하여 리스트 업데이트
+      _allProducts[productIndex] = Product(
+        id: currentProduct.id,
+        productName: currentProduct.productName,
+        brandName: currentProduct.brandName,
+        price: currentProduct.price,
+        discount: currentProduct.discount,
+        imageUrl: currentProduct.imageUrl,
+        category: currentProduct.category,
+        likes: finalLikes.toString(),
+        reviews: currentProduct.reviews,
+        isFavorite: isLiked,
+      );
     }
   }
 
@@ -332,7 +409,7 @@ class AppState extends ChangeNotifier {
       }
 
       // 리뷰 개수 초기화
-      _initializeReviewCounts(products);
+      await _initializeReviewCounts(products);
 
       // 최근 본 상품 로드
       _recentProducts = await RecentProductsService.getRecentProducts();

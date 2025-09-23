@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 import '../widgets/favorites_tab_bar.dart';
 import '../widgets/product_card.dart';
 
@@ -55,7 +55,7 @@ class _FavoritesPageState extends State<FavoritesPage>
   }
 
   Widget _buildProductTab() {
-    return Consumer<AppState>(
+    return Consumer<OptimizedAppState>(
       builder: (context, appState, child) {
         final favoriteProducts = appState.favoriteProducts;
 

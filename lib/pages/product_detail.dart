@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shopping_application/models/qa.dart';
+import 'package:shopping_application/services/supabase_service.dart';
 import '../models/product.dart';
 import '../models/review.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 import '../utils/price_formatter.dart';
 import '../widgets/product_option_dialog.dart';
 
@@ -19,13 +21,16 @@ class _ProductDetailState extends State<ProductDetail>
     with TickerProviderStateMixin {
   late TabController _tabController;
   List<Review> _reviews = [];
+  List<Qa> _qas = [];
   bool _isLoadingReviews = false;
+  bool _isLoadingQAs = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadReviews();
+    _loadQAs();
   }
 
   @override
@@ -40,19 +45,19 @@ class _ProductDetailState extends State<ProductDetail>
     });
 
     try {
-      // 실제 구현에서는 SupabaseService.getReviews(widget.product.id!) 호출
-      await Future.delayed(const Duration(seconds: 1)); // 임시 지연
-      _reviews = _getMockReviews();
-
-      // AppState에 리뷰 개수 업데이트
+      // 실제 DB에서 리뷰 데이터 로드
       if (widget.product.id != null) {
-        context.read<AppState>().setReviewCount(
+        _reviews = await SupabaseService.getReviews(widget.product.id!);
+
+        // OptimizedAppState에 리뷰 개수 업데이트
+        context.read<OptimizedAppState>().setReviewCount(
           widget.product.id!,
           _reviews.length,
         );
       }
     } catch (e) {
       print('Error loading reviews: $e');
+      _reviews = []; // 에러 시 빈 리스트
     } finally {
       setState(() {
         _isLoadingReviews = false;
@@ -60,40 +65,31 @@ class _ProductDetailState extends State<ProductDetail>
     }
   }
 
-  List<Review> _getMockReviews() {
-    return [
-      Review(
-        id: 1,
-        productId: widget.product.id ?? 1,
-        userName: '김철수',
-        rating: 5,
-        content: '정말 좋은 제품이에요! 사이즈도 딱 맞고 품질도 만족스럽습니다.',
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      Review(
-        id: 2,
-        productId: widget.product.id ?? 1,
-        userName: '이영희',
-        rating: 4,
-        content: '가격 대비 품질이 좋네요. 다음에도 구매하고 싶습니다.',
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-      Review(
-        id: 3,
-        productId: widget.product.id ?? 1,
-        userName: '박민수',
-        rating: 5,
-        content: '배송도 빨랐고 상품도 설명과 일치해요. 추천합니다!',
-        createdAt: DateTime.now().subtract(const Duration(days: 7)),
-      ),
-    ];
+  Future<void> _loadQAs() async {
+    setState(() {
+      _isLoadingQAs = true;
+    });
+
+    try {
+      // 실제 DB에서 Q&A 데이터 로드
+      if (widget.product.id != null) {
+        _qas = await SupabaseService.getQAs(widget.product.id!);
+      }
+    } catch (e) {
+      print('Error loading Q&As: $e');
+      _qas = []; // 에러 시 빈 리스트
+    } finally {
+      setState(() {
+        _isLoadingQAs = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // 최근 본 상품에 추가
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppState>().addRecentProduct(widget.product);
+      context.read<OptimizedAppState>().addRecentProduct(widget.product);
     });
 
     return Scaffold(
@@ -107,7 +103,7 @@ class _ProductDetailState extends State<ProductDetail>
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          Consumer<AppState>(
+          Consumer<OptimizedAppState>(
             builder: (context, appState, child) {
               final isFavorite = appState.isFavorite(widget.product.id ?? 0);
               return IconButton(
@@ -203,7 +199,7 @@ class _ProductDetailState extends State<ProductDetail>
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Consumer<AppState>(
+                          Consumer<OptimizedAppState>(
                             builder: (context, appState, child) {
                               final favoriteCount = appState.getFavoriteCount(
                                 widget.product.id ?? 0,
@@ -236,8 +232,8 @@ class _ProductDetailState extends State<ProductDetail>
                     indicatorColor: Colors.black,
                     tabs: [
                       const Tab(text: '상품정보'),
-                      Tab(text: '리뷰 (${_reviews.length})'),
-                      const Tab(text: 'Q&A (3)'),
+                      Tab(text: '리뷰'),
+                      const Tab(text: 'Q&A'),
                     ],
                   ),
                 ),
@@ -250,7 +246,7 @@ class _ProductDetailState extends State<ProductDetail>
           ),
         ),
       ),
-      bottomNavigationBar: Consumer<AppState>(
+      bottomNavigationBar: Consumer<OptimizedAppState>(
         builder: (context, appState, child) {
           return Container(
             padding: const EdgeInsets.all(16),
@@ -285,7 +281,11 @@ class _ProductDetailState extends State<ProductDetail>
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      if (widget.product.id != null) {
+                        _showBuyNowDialog(context, appState);
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xff1957ee),
                       foregroundColor: Colors.white,
@@ -443,34 +443,62 @@ class _ProductDetailState extends State<ProductDetail>
   }
 
   Widget _buildQnA() {
-    return ListView(
+    if (_isLoadingQAs) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_qas.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.help_outline, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              '아직 질문이 없습니다',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '첫 번째 질문을 남겨보세요!',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      children: [
-        _buildQAItem(
-          '사이즈 문의',
-          'S 사이즈와 M 사이즈 차이가 많이 나나요?',
-          '안녕하세요. S 사이즈와 M 사이즈는 가슴둘레 기준으로 약 2cm 정도 차이가 납니다.',
-          '김민수',
-          '2024.01.15',
-        ),
-        const SizedBox(height: 16),
-        _buildQAItem(
-          '배송 문의',
-          '주문 후 배송까지 얼마나 걸리나요?',
-          null, // 답변이 아직 없는 경우
-          '이영희',
-          '2024.01.14',
-        ),
-        const SizedBox(height: 16),
-        _buildQAItem(
-          '교환/환불',
-          '교환이 가능한가요?',
-          '네, 7일 이내 교환/환불이 가능합니다. 단, 상품의 상태가 양호해야 합니다.',
-          '박철수',
-          '2024.01.13',
-        ),
-      ],
+      itemCount: _qas.length,
+      itemBuilder: (context, index) {
+        final qa = _qas[index];
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < _qas.length - 1 ? 16 : 0),
+          child: _buildQAItem(
+            _getQACategory(qa.question),
+            qa.question,
+            qa.answer,
+            qa.userName,
+            _formatDate(qa.createdAt),
+          ),
+        );
+      },
     );
+  }
+
+  String _getQACategory(String question) {
+    if (question.contains('사이즈') || question.contains('크기')) {
+      return '사이즈 문의';
+    } else if (question.contains('배송') || question.contains('발송')) {
+      return '배송 문의';
+    } else if (question.contains('교환') || question.contains('환불')) {
+      return '교환/환불';
+    } else if (question.contains('재고') || question.contains('품절')) {
+      return '재고 문의';
+    } else {
+      return '기타 문의';
+    }
   }
 
   Widget _buildQAItem(
@@ -570,7 +598,7 @@ class _ProductDetailState extends State<ProductDetail>
     return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
   }
 
-  void _showOptionDialog(BuildContext context, AppState appState) {
+  void _showOptionDialog(BuildContext context, OptimizedAppState appState) {
     showDialog(
       context: context,
       builder: (context) => ProductOptionDialog(
@@ -592,6 +620,239 @@ class _ProductDetailState extends State<ProductDetail>
           }
         },
       ),
+    );
+  }
+
+  void _showBuyNowDialog(BuildContext context, OptimizedAppState appState) {
+    showDialog(
+      context: context,
+      builder: (context) => ProductOptionDialog(
+        product: widget.product,
+        buttonText: '구매하기',
+        shouldCloseDialog: false,
+        onAddToCart: (size, color, quantity) async {
+          // 구매 완료 다이얼로그 표시 (장바구니에 담지 않음)
+          if (context.mounted) {
+            Navigator.pop(context); // 옵션 선택 다이얼로그 닫기
+            _showPurchaseCompleteDialog(context, size, color, quantity);
+          }
+        },
+      ),
+    );
+  }
+
+  void _showPurchaseCompleteDialog(
+    BuildContext context,
+    String size,
+    String color,
+    int quantity,
+  ) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 상단 성공 아이콘 영역
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.green[400]!, Colors.green[600]!],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: Colors.green[600],
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '구매가 완료되었습니다!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '빠른 시일 내에 배송될 예정입니다',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 상품 정보 영역
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 상품 이미지와 정보
+                    Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: NetworkImage(widget.product.imageUrl),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.product.brandName,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                widget.product.productName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 주문 정보
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildOrderInfoRow('옵션', '$color $size'),
+                          const SizedBox(height: 8),
+                          _buildOrderInfoRow('수량', '$quantity개'),
+                          const SizedBox(height: 8),
+                          _buildOrderInfoRow(
+                            '결제금액',
+                            '₩${PriceFormatter.formatPrice((int.tryParse(widget.product.price) ?? 0) * quantity)}',
+                            isPrice: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 하단 버튼 영역
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff1957ee),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      '확인',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderInfoRow(
+    String label,
+    String value, {
+    bool isPrice = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isPrice ? FontWeight.bold : FontWeight.w500,
+            color: isPrice ? Colors.black : Colors.grey[800],
+          ),
+        ),
+      ],
     );
   }
 }

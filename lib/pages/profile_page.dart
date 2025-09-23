@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/recent_view.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 import 'setting.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -127,7 +127,7 @@ class ProfilePage extends StatelessWidget {
             ),
 
             // 최근 본 상품 섹션
-            Consumer<AppState>(
+            Consumer<OptimizedAppState>(
               builder: (context, appState, child) {
                 if (appState.recentProducts.isEmpty) {
                   return const SizedBox.shrink();

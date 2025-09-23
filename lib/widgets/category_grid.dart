@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 
 class CategoryGrid extends StatelessWidget {
   final List<Map<String, dynamic>> categories;
@@ -23,7 +23,7 @@ class CategoryGrid extends StatelessWidget {
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final category = categories[index];
-          return Consumer<AppState>(
+          return Consumer<OptimizedAppState>(
             builder: (context, appState, child) {
               final isSelected = appState.selectedCategory == category['name'];
               return GestureDetector(

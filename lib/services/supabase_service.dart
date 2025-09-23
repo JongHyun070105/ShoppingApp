@@ -42,19 +42,29 @@ class SupabaseService {
   // 상품 즐겨찾기 토글
   static Future<bool> toggleFavorite(int productId) async {
     try {
-      // 현재 즐겨찾기 상태 조회
+      // 현재 즐겨찾기 상태와 좋아요 개수 조회
       final currentProduct = await _client
           .from('products')
-          .select('is_favorite')
+          .select('is_favorite, likes')
           .eq('id', productId)
           .single();
 
-      final newFavoriteStatus = !currentProduct['is_favorite'];
+      final currentFavoriteStatus = currentProduct['is_favorite'];
+      final currentLikes =
+          int.tryParse(currentProduct['likes']?.toString() ?? '0') ?? 0;
+      final newFavoriteStatus = !currentFavoriteStatus;
 
-      // 즐겨찾기 상태 업데이트
+      // 좋아요 개수 계산 (좋아요 추가 시 +1, 취소 시 -1)
+      final newLikes = newFavoriteStatus ? currentLikes + 1 : currentLikes - 1;
+      final finalLikes = newLikes < 0 ? 0 : newLikes; // 음수 방지
+
+      // 즐겨찾기 상태와 좋아요 개수 업데이트
       await _client
           .from('products')
-          .update({'is_favorite': newFavoriteStatus})
+          .update({
+            'is_favorite': newFavoriteStatus,
+            'likes': finalLikes.toString(),
+          })
           .eq('id', productId);
 
       return newFavoriteStatus;
@@ -137,6 +147,21 @@ class SupabaseService {
       return response.map<Review>((json) => Review.fromJson(json)).toList();
     } catch (e) {
       print('Error fetching reviews: $e');
+      return [];
+    }
+  }
+
+  // 모든 리뷰 조회 (상품별 리뷰 개수 계산용)
+  static Future<List<Review>> getAllReviews() async {
+    try {
+      final response = await _client
+          .from('reviews')
+          .select()
+          .order('created_at', ascending: false);
+
+      return response.map<Review>((json) => Review.fromJson(json)).toList();
+    } catch (e) {
+      print('Error fetching all reviews: $e');
       return [];
     }
   }

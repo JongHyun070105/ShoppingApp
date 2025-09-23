@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 import '../models/cart_item.dart';
 import '../utils/price_formatter.dart';
 
@@ -15,7 +15,7 @@ class _CartPageState extends State<CartPage> {
   bool _selectAll = false;
 
   void _toggleSelectAll() {
-    final appState = context.read<AppState>();
+    final appState = context.read<OptimizedAppState>();
     setState(() {
       _selectAll = !_selectAll;
       for (var item in appState.cartItems) {
@@ -25,7 +25,7 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _toggleItemSelection(int itemId) {
-    final appState = context.read<AppState>();
+    final appState = context.read<OptimizedAppState>();
     setState(() {
       final item = appState.cartItems.firstWhere((item) => item.id == itemId);
       item.isSelected = !item.isSelected;
@@ -36,7 +36,7 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _updateQuantity(int itemId, int newQuantity) {
-    final appState = context.read<AppState>();
+    final appState = context.read<OptimizedAppState>();
     if (newQuantity > 0) {
       appState.updateCartItemQuantity(itemId, newQuantity);
     } else {
@@ -45,7 +45,7 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _deleteAllItems() {
-    final appState = context.read<AppState>();
+    final appState = context.read<OptimizedAppState>();
     appState.clearCart();
     setState(() {
       _selectAll = false;
@@ -53,7 +53,7 @@ class _CartPageState extends State<CartPage> {
   }
 
   void _deleteItem(int itemId) {
-    final appState = context.read<AppState>();
+    final appState = context.read<OptimizedAppState>();
     appState.removeFromCart(itemId);
   }
 
@@ -82,24 +82,237 @@ class _CartPageState extends State<CartPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('결제 확인'),
-        content: Text(
-          '총 ${selectedItems.length}개 상품을 구매하시겠습니까?\n총 금액: ₩${PriceFormatter.formatPrice(_calculateTotalPrice(selectedItems))}',
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 헤더 영역
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xff1957ee).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.payment_rounded,
+                        color: Color(0xff1957ee),
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '결제 확인',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '선택하신 상품을 구매하시겠습니까?',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 결제 정보 영역
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // 결제 요약
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildPaymentInfoRow(
+                            '주문 상품',
+                            '${selectedItems.length}개',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildPaymentInfoRow(
+                            '결제 금액',
+                            '₩${PriceFormatter.formatPrice(_calculateTotalPrice(selectedItems))}',
+                            isPrice: true,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 주문 상품 미리보기
+                    if (selectedItems.isNotEmpty) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '주문 상품',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 120),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: selectedItems.length,
+                          itemBuilder: (context, index) {
+                            final item = selectedItems[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          item.product.imageUrl,
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.product.productName,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (item.selectedOptions.isNotEmpty)
+                                          Text(
+                                            item.selectedOptions,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${item.quantity}개',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // 하단 버튼 영역
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.grey[300]!),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '취소',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _completePayment(cartItems);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xff1957ee),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          '결제하기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _completePayment(cartItems);
-            },
-            child: const Text('결제하기'),
-          ),
-        ],
       ),
     );
   }
@@ -107,7 +320,7 @@ class _CartPageState extends State<CartPage> {
   void _completePayment(List<CartItem> cartItems) {
     // 결제 완료 처리
     final selectedItems = cartItems.where((item) => item.isSelected).toList();
-    final appState = context.read<AppState>();
+    final appState = context.read<OptimizedAppState>();
 
     // 선택된 아이템들을 장바구니에서 제거
     for (final item in selectedItems) {
@@ -123,35 +336,249 @@ class _CartPageState extends State<CartPage> {
     // 결제 완료 다이얼로그
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 28),
-            const SizedBox(width: 8),
-            const Text('결제 완료'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('총 ${selectedItems.length}개 상품의 결제가 완료되었습니다.'),
-            const SizedBox(height: 8),
-            Text(
-              '결제 금액: ₩${PriceFormatter.formatPrice(_calculateTotalPrice(selectedItems))}',
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context); // 장바구니 페이지도 닫기
-            },
-            child: const Text('확인'),
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 상단 성공 아이콘 영역
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.green[400]!, Colors.green[600]!],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.check_rounded,
+                        color: Colors.green[600],
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '결제가 완료되었습니다!',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '선택하신 상품들이 배송 준비 중입니다',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 결제 정보 영역
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    // 결제 요약
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildPaymentInfoRow(
+                            '주문 상품',
+                            '${selectedItems.length}개',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildPaymentInfoRow(
+                            '결제 금액',
+                            '₩${PriceFormatter.formatPrice(_calculateTotalPrice(selectedItems))}',
+                            isPrice: true,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 주문 상품 미리보기
+                    if (selectedItems.isNotEmpty) ...[
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '주문 상품',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        constraints: const BoxConstraints(maxHeight: 120),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: selectedItems.length,
+                          itemBuilder: (context, index) {
+                            final item = selectedItems[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      image: DecorationImage(
+                                        image: NetworkImage(
+                                          item.product.imageUrl,
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.product.productName,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (item.selectedOptions.isNotEmpty)
+                                          Text(
+                                            item.selectedOptions,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${item.quantity}개',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              // 하단 확인 버튼
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pop(context); // 장바구니 페이지도 닫기
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff1957ee),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      '확인',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+
+  Widget _buildPaymentInfoRow(
+    String label,
+    String value, {
+    bool isPrice = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isPrice ? FontWeight.bold : FontWeight.w500,
+            color: isPrice ? Colors.black : Colors.grey[800],
+          ),
+        ),
+      ],
     );
   }
 
@@ -176,7 +603,7 @@ class _CartPageState extends State<CartPage> {
           ),
         ),
       ),
-      body: Consumer<AppState>(
+      body: Consumer<OptimizedAppState>(
         builder: (context, appState, child) {
           if (appState.cartItems.isEmpty) {
             return const Center(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 import '../widgets/product_card.dart';
+import '../models/product.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -13,6 +14,10 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+
+  // 검색 상태를 페이지 내에서 관리
+  String _searchQuery = '';
+  List<Product> _searchResults = [];
 
   List<String> recentSearches = ["티셔츠", "후드티", "나이키", "가디건", "자켓", "청바지"];
 
@@ -48,34 +53,38 @@ class _SearchPageState extends State<SearchPage> {
 
   void _performSearch() {
     final query = _searchController.text.trim();
-    context.read<AppState>().setSearchQuery(query);
 
-    if (query.isNotEmpty) {
-      // 최근 검색어에 추가 (중복 제거)
-      if (!recentSearches.contains(query)) {
-        setState(() {
+    setState(() {
+      _searchQuery = query;
+
+      if (query.isNotEmpty) {
+        // OptimizedAppState에서 모든 상품을 가져와서 검색
+        final allProducts = context.read<OptimizedAppState>().allProducts;
+        _searchResults = allProducts.where((product) {
+          return product.productName.toLowerCase().contains(
+                query.toLowerCase(),
+              ) ||
+              product.brandName.toLowerCase().contains(query.toLowerCase()) ||
+              (product.category?.toLowerCase().contains(query.toLowerCase()) ??
+                  false);
+        }).toList();
+
+        // 최근 검색어에 추가 (중복 제거)
+        if (!recentSearches.contains(query)) {
           recentSearches.insert(0, query);
           if (recentSearches.length > 10) {
             recentSearches.removeLast();
           }
-        });
+        }
+      } else {
+        _searchResults = [];
       }
-    }
+    });
   }
 
   void handleSearchTap(String searchTerm) {
     _searchController.text = searchTerm;
-    context.read<AppState>().setSearchQuery(searchTerm);
-
-    // 최근 검색어에 추가 (중복 제거)
-    if (!recentSearches.contains(searchTerm)) {
-      setState(() {
-        recentSearches.insert(0, searchTerm);
-        if (recentSearches.length > 10) {
-          recentSearches.removeLast();
-        }
-      });
-    }
+    _performSearch(); // 검색 실행
   }
 
   void handleDeleteAll() {
@@ -86,7 +95,10 @@ class _SearchPageState extends State<SearchPage> {
 
   void _clearSearch() {
     _searchController.clear();
-    context.read<AppState>().clearSearch();
+    setState(() {
+      _searchQuery = '';
+      _searchResults = [];
+    });
   }
 
   @override
@@ -127,97 +139,81 @@ class _SearchPageState extends State<SearchPage> {
           ),
         ),
       ),
-      body: Consumer<AppState>(
-        builder: (context, appState, child) {
+      body: Column(
+        children: [
           // 검색어가 있으면 검색 결과 표시
-          if (appState.searchQuery.isNotEmpty) {
-            final searchResults = appState.allProducts;
-
-            return Column(
-              children: [
-                // 검색 결과 헤더
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Text(
-                        "'${appState.searchQuery}' 검색 결과 ${searchResults.length}개",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: _clearSearch,
-                        child: const Text('초기화'),
-                      ),
-                    ],
+          if (_searchQuery.isNotEmpty) ...[
+            // 검색 결과 헤더
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Text(
+                    "'$_searchQuery' 검색 결과 ${_searchResults.length}개",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                // 검색 결과 상품 목록
-                Expanded(
-                  child: searchResults.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off,
-                                size: 64,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(height: 16),
-                              Text(
-                                '검색 결과가 없습니다',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                '다른 검색어로 시도해보세요',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : GridView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: 0.6,
-                              ),
-                          itemCount: searchResults.length,
-                          itemBuilder: (context, index) {
-                            final product = searchResults[index];
-                            return ProductCard(product: product);
-                          },
-                        ),
-                ),
-              ],
-            );
-          }
-
-          // 검색어가 없으면 최근/인기 검색어 표시
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                // 최근 검색어 섹션 (항상 표시)
-                _buildRecentSearchSection(),
-                // 인기 검색어 섹션
-                _buildPopularSearchSection(),
-              ],
+                  const Spacer(),
+                  TextButton(onPressed: _clearSearch, child: const Text('초기화')),
+                ],
+              ),
             ),
-          );
-        },
+            // 검색 결과 상품 목록
+            Expanded(
+              child: _searchResults.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.search_off, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            '검색 결과가 없습니다',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            '다른 검색어로 시도해보세요',
+                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.6,
+                          ),
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, index) {
+                        final product = _searchResults[index];
+                        return ProductCard(product: product);
+                      },
+                    ),
+            ),
+          ]
+          // 검색어가 없으면 최근/인기 검색어 표시
+          else ...[
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // 최근 검색어 섹션 (항상 표시)
+                    _buildRecentSearchSection(),
+                    // 인기 검색어 섹션
+                    _buildPopularSearchSection(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

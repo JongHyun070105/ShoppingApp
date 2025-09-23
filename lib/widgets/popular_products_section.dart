@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'product_card.dart';
 import '../models/product.dart';
-import '../services/app_state.dart';
+import '../services/optimized_app_state.dart';
 
 class PopularProductsSection extends StatelessWidget {
   final List<Product> products;
@@ -11,7 +11,7 @@ class PopularProductsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(
+    return Consumer<OptimizedAppState>(
       builder: (context, appState, child) {
         final selectedCategory = appState.selectedCategory;
         final title = selectedCategory == '전체'

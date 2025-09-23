@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'config/supabase_config.dart';
-import 'services/app_state.dart';
+import 'services/optimized_app_state.dart';
 import 'pages/main_page.dart';
 
 void main() async {
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => AppState(),
+      create: (context) => OptimizedAppState(),
       child: MaterialApp(
         title: 'My Best Fit',
         theme: ThemeData(primarySwatch: Colors.green, fontFamily: 'Roboto'),
