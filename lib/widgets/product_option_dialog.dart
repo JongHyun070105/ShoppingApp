@@ -47,7 +47,7 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -176,7 +176,7 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -276,7 +276,7 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xff1957ee).withOpacity(0.3),
+                            color: const Color(0xff1957ee).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -334,7 +334,7 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                   boxShadow: _quantity > 1
                       ? [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -385,7 +385,7 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                   border: Border.all(color: Colors.grey[300]!, width: 1.5),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),

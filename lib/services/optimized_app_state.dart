@@ -83,7 +83,7 @@ class OptimizedAppState extends ChangeNotifier {
       await _initializeReviewCounts();
       await _loadUserPreferences();
     } catch (e) {
-      print('Error initializing app: $e');
+      logger.e('Error initializing app: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -109,7 +109,7 @@ class OptimizedAppState extends ChangeNotifier {
       // 즐겨찾기 상태 초기화
       _initializeFavorites();
     } catch (e) {
-      print('Error loading products: $e');
+      logger.e('Error loading products: $e');
     }
   }
 
@@ -129,7 +129,7 @@ class OptimizedAppState extends ChangeNotifier {
     try {
       _cartItems = await SupabaseService.getCartItems(1); // 임시 사용자 ID
     } catch (e) {
-      print('Error loading cart items: $e');
+      logger.e('Error loading cart items: $e');
       _cartItems = [];
     }
   }
@@ -139,7 +139,7 @@ class OptimizedAppState extends ChangeNotifier {
     try {
       _favoriteProducts = await SupabaseService.getFavoriteProducts();
     } catch (e) {
-      print('Error loading favorite products: $e');
+      logger.e('Error loading favorite products: $e');
       _favoriteProducts = [];
     }
   }
@@ -165,7 +165,7 @@ class OptimizedAppState extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error loading review counts: $e');
+      logger.e('Error loading review counts: $e');
       // 에러 시 모든 상품의 리뷰 개수를 0으로 설정
       for (final product in _allProducts) {
         if (product.id != null) {
@@ -181,7 +181,7 @@ class OptimizedAppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       _selectedCategory = prefs.getString('selected_category') ?? '전체';
     } catch (e) {
-      print('Error loading user preferences: $e');
+      logger.e('Error loading user preferences: $e');
     }
   }
 
@@ -235,7 +235,7 @@ class OptimizedAppState extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('selected_category', category);
     } catch (e) {
-      print('Error saving category preference: $e');
+      logger.e('Error saving category preference: $e');
     }
 
     // 캐시된 데이터가 있으면 사용, 없으면 새로 로드
@@ -268,7 +268,7 @@ class OptimizedAppState extends ChangeNotifier {
 
       // Supabase에서 토글 (백그라운드에서)
       SupabaseService.toggleFavorite(productId).catchError((e) {
-        print('Error updating favorite in Supabase: $e');
+        logger.e('Error updating favorite in Supabase: $e');
         // 에러 시 원래 상태로 되돌리기
         _favorites[productId] = currentStatus;
         _updateLocalProductLikes(productId, currentStatus);
@@ -277,7 +277,7 @@ class OptimizedAppState extends ChangeNotifier {
         return false; // onError 핸들러가 bool 값을 반환해야 함
       });
     } catch (e) {
-      print('Error toggling favorite: $e');
+      logger.e('Error toggling favorite: $e');
     }
   }
 
@@ -352,7 +352,7 @@ class OptimizedAppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error adding to cart: $e');
+      logger.e('Error adding to cart: $e');
     }
   }
 
@@ -371,7 +371,7 @@ class OptimizedAppState extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error updating cart item quantity: $e');
+      logger.e('Error updating cart item quantity: $e');
     }
   }
 
@@ -384,7 +384,7 @@ class OptimizedAppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error removing from cart: $e');
+      logger.e('Error removing from cart: $e');
     }
   }
 
@@ -409,7 +409,7 @@ class OptimizedAppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error clearing cart: $e');
+      logger.e('Error clearing cart: $e');
     }
   }
 

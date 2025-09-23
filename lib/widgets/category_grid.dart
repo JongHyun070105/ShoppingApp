@@ -49,14 +49,14 @@ class CategoryGrid extends StatelessWidget {
                                 BoxShadow(
                                   color: const Color(
                                     0xff1957ee,
-                                  ).withOpacity(0.3),
+                                  ).withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   spreadRadius: 2,
                                 ),
                               ]
                             : [
                                 BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
+                                  color: Colors.grey.withValues(alpha: 0.2),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),

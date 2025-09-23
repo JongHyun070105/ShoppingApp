@@ -3,6 +3,9 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import 'supabase_service.dart';
 import 'recent_products_service.dart';
+import 'package:logger/logger.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class OptimizedAppState extends ChangeNotifier {
   // 싱글톤 인스턴스
@@ -197,7 +200,7 @@ class OptimizedAppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error adding to cart: $e');
+      logger.e('Error adding to cart: $e');
     }
   }
 
@@ -216,7 +219,7 @@ class OptimizedAppState extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error updating cart item quantity: $e');
+      logger.e('Error updating cart item quantity: $e');
     }
   }
 
@@ -229,7 +232,7 @@ class OptimizedAppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error removing from cart: $e');
+      logger.e('Error removing from cart: $e');
     }
   }
 
@@ -242,7 +245,7 @@ class OptimizedAppState extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error clearing cart: $e');
+      logger.e('Error clearing cart: $e');
     }
   }
 
@@ -252,7 +255,7 @@ class OptimizedAppState extends ChangeNotifier {
       _cartItems = await SupabaseService.getCartItems(_currentUserId);
       notifyListeners();
     } catch (e) {
-      print('Error loading cart items: $e');
+      logger.e('Error loading cart items: $e');
     }
   }
 
@@ -280,7 +283,7 @@ class OptimizedAppState extends ChangeNotifier {
       // 최근 본 상품 로드
       _recentProducts = await RecentProductsService.getRecentProducts();
     } catch (e) {
-      print('Error loading data: $e');
+      logger.e('Error loading data: $e');
     } finally {
       _setLoading(false);
     }
@@ -318,7 +321,7 @@ class OptimizedAppState extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error loading review counts: $e');
+      logger.e('Error loading review counts: $e');
       // 에러 시 모든 상품의 리뷰 개수를 0으로 설정
       for (final product in products) {
         if (product.id != null) {
@@ -347,14 +350,14 @@ class OptimizedAppState extends ChangeNotifier {
       try {
         await SupabaseService.toggleFavorite(productId);
       } catch (e) {
-        print('Error updating favorite in Supabase: $e');
+        logger.e('Error updating favorite in Supabase: $e');
         // 에러 시 원래 상태로 되돌리기
         _favorites[productId] = currentStatus;
         _updateLocalProductLikes(productId, currentStatus);
         notifyListeners();
       }
     } catch (e) {
-      print('Error toggling favorite: $e');
+      logger.e('Error toggling favorite: $e');
     }
   }
 
@@ -417,7 +420,7 @@ class OptimizedAppState extends ChangeNotifier {
       // 장바구니 로드
       await loadCartItems();
     } catch (e) {
-      print('Error refreshing data: $e');
+      logger.e('Error refreshing data: $e');
     } finally {
       _setLoading(false);
     }

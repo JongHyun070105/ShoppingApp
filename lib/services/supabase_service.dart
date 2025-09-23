@@ -4,6 +4,9 @@ import '../models/review.dart';
 import '../models/qa.dart';
 import '../models/cart_item.dart';
 import '../config/supabase_config.dart';
+import 'package:logger/logger.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class SupabaseService {
   static SupabaseClient get _client => SupabaseConfig.client;
@@ -18,8 +21,8 @@ class SupabaseService {
 
       return response.map<Product>((json) => Product.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching products: $e');
-      return _getMockProducts();
+      logger.e('Error fetching products: $e');
+      return []; // 빈 리스트 반환
     }
   }
 
@@ -34,8 +37,8 @@ class SupabaseService {
 
       return response.map<Product>((json) => Product.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching favorite products: $e');
-      return _getMockFavoriteProducts();
+      logger.e('Error fetching favorite products: $e');
+      return []; // 빈 리스트 반환
     }
   }
 
@@ -69,7 +72,7 @@ class SupabaseService {
 
       return newFavoriteStatus;
     } catch (e) {
-      print('Error toggling favorite: $e');
+      logger.e('Error toggling favorite: $e');
       // 에러 발생 시 모의 데이터에서는 항상 true 반환
       return true;
     }
@@ -86,7 +89,7 @@ class SupabaseService {
 
       return response.map<Product>((json) => Product.fromJson(json)).toList();
     } catch (e) {
-      print('Error searching products: $e');
+      logger.e('Error searching products: $e');
       return [];
     }
   }
@@ -102,7 +105,7 @@ class SupabaseService {
 
       return Product.fromJson(response);
     } catch (e) {
-      print('Error adding product: $e');
+      logger.e('Error adding product: $e');
       return null;
     }
   }
@@ -119,7 +122,7 @@ class SupabaseService {
 
       return Product.fromJson(response);
     } catch (e) {
-      print('Error updating product: $e');
+      logger.e('Error updating product: $e');
       return null;
     }
   }
@@ -130,7 +133,7 @@ class SupabaseService {
       await _client.from('products').delete().eq('id', id);
       return true;
     } catch (e) {
-      print('Error deleting product: $e');
+      logger.e('Error deleting product: $e');
       return false;
     }
   }
@@ -146,7 +149,7 @@ class SupabaseService {
 
       return response.map<Review>((json) => Review.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching reviews: $e');
+      logger.e('Error fetching reviews: $e');
       return [];
     }
   }
@@ -161,7 +164,7 @@ class SupabaseService {
 
       return response.map<Review>((json) => Review.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching all reviews: $e');
+      logger.e('Error fetching all reviews: $e');
       return [];
     }
   }
@@ -177,7 +180,7 @@ class SupabaseService {
 
       return Review.fromJson(response);
     } catch (e) {
-      print('Error adding review: $e');
+      logger.e('Error adding review: $e');
       return null;
     }
   }
@@ -193,7 +196,7 @@ class SupabaseService {
 
       return response.map<Qa>((json) => Qa.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching QAs: $e');
+      logger.e('Error fetching QAs: $e');
       return [];
     }
   }
@@ -209,7 +212,7 @@ class SupabaseService {
 
       return Qa.fromJson(response);
     } catch (e) {
-      print('Error adding QA: $e');
+      logger.e('Error adding QA: $e');
       return null;
     }
   }
@@ -227,117 +230,117 @@ class SupabaseService {
 
       return true;
     } catch (e) {
-      print('Error answering QA: $e');
+      logger.e('Error answering QA: $e');
       return false;
     }
   }
 
   // 모의 데이터 (개발용)
-  static List<Product> _getMockProducts() {
-    return [
-      Product(
-        id: 1,
-        brandName: '투데이무드',
-        productName: '콜린 니트 맨투맨',
-        discount: '39',
-        price: '59,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
-        likes: '999+',
-        reviews: '120',
-        isFavorite: false,
-      ),
-      Product(
-        id: 2,
-        brandName: '스타일리시',
-        productName: '베이직 후드티',
-        discount: '25',
-        price: '39,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300',
-        likes: '756',
-        reviews: '89',
-        isFavorite: false,
-      ),
-      Product(
-        id: 3,
-        brandName: '트렌디웨어',
-        productName: '데님 셔츠',
-        discount: '30',
-        price: '49,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',
-        likes: '432',
-        reviews: '67',
-        isFavorite: false,
-      ),
-      Product(
-        id: 4,
-        brandName: '모던스타일',
-        productName: '오버핏 스웨터',
-        discount: '20',
-        price: '69,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300',
-        likes: '321',
-        reviews: '45',
-        isFavorite: false,
-      ),
-    ];
-  }
+  // static List<Product> _getMockProducts() {
+  //   return [
+  //     Product(
+  //       id: 1,
+  //       brandName: '투데이무드',
+  //       productName: '콜린 니트 맨투맨',
+  //       discount: '39',
+  //       price: '59,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
+  //       likes: '999+',
+  //       reviews: '120',
+  //       isFavorite: false,
+  //     ),
+  //     Product(
+  //       id: 2,
+  //       brandName: '스타일리시',
+  //       productName: '베이직 후드티',
+  //       discount: '25',
+  //       price: '39,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300',
+  //       likes: '756',
+  //       reviews: '89',
+  //       isFavorite: false,
+  //     ),
+  //     Product(
+  //       id: 3,
+  //       brandName: '트렌디웨어',
+  //       productName: '데님 셔츠',
+  //       discount: '30',
+  //       price: '49,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',
+  //       likes: '432',
+  //       reviews: '67',
+  //       isFavorite: false,
+  //     ),
+  //     Product(
+  //       id: 4,
+  //       brandName: '모던스타일',
+  //       productName: '오버핏 스웨터',
+  //       discount: '20',
+  //       price: '69,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300',
+  //       likes: '321',
+  //       reviews: '45',
+  //       isFavorite: false,
+  //     ),
+  //   ];
+  // }
 
-  static List<Product> _getMockFavoriteProducts() {
-    return [
-      Product(
-        id: 1,
-        brandName: '투데이무드',
-        productName: '콜린 니트 맨투맨',
-        discount: '39',
-        price: '59,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
-        likes: '999+',
-        reviews: '120',
-        isFavorite: true,
-      ),
-      Product(
-        id: 2,
-        brandName: '스타일리시',
-        productName: '베이직 후드티',
-        discount: '25',
-        price: '39,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300',
-        likes: '756',
-        reviews: '89',
-        isFavorite: true,
-      ),
-      Product(
-        id: 3,
-        brandName: '트렌디웨어',
-        productName: '데님 셔츠',
-        discount: '30',
-        price: '49,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',
-        likes: '432',
-        reviews: '67',
-        isFavorite: true,
-      ),
-      Product(
-        id: 4,
-        brandName: '모던스타일',
-        productName: '오버핏 스웨터',
-        discount: '20',
-        price: '69,000',
-        imageUrl:
-            'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300',
-        likes: '321',
-        reviews: '45',
-        isFavorite: true,
-      ),
-    ];
-  }
+  // static List<Product> _getMockFavoriteProducts() {
+  //   return [
+  //     Product(
+  //       id: 1,
+  //       brandName: '투데이무드',
+  //       productName: '콜린 니트 맨투맨',
+  //       discount: '39',
+  //       price: '59,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
+  //       likes: '999+',
+  //       reviews: '120',
+  //       isFavorite: true,
+  //     ),
+  //     Product(
+  //       id: 2,
+  //       brandName: '스타일리시',
+  //       productName: '베이직 후드티',
+  //       discount: '25',
+  //       price: '39,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300',
+  //       likes: '756',
+  //       reviews: '89',
+  //       isFavorite: true,
+  //     ),
+  //     Product(
+  //       id: 3,
+  //       brandName: '트렌디웨어',
+  //       productName: '데님 셔츠',
+  //       discount: '30',
+  //       price: '49,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',
+  //       likes: '432',
+  //       reviews: '67',
+  //       isFavorite: true,
+  //     ),
+  //     Product(
+  //       id: 4,
+  //       brandName: '모던스타일',
+  //       productName: '오버핏 스웨터',
+  //       discount: '20',
+  //       price: '69,000',
+  //       imageUrl:
+  //           'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=300',
+  //       likes: '321',
+  //       reviews: '45',
+  //       isFavorite: true,
+  //     ),
+  //   ];
+  // }
 
   // 장바구니 아이템 조회
   static Future<List<CartItem>> getCartItems(int userId) async {
@@ -356,7 +359,7 @@ class SupabaseService {
         return CartItem.fromJson(json, product);
       }).toList();
     } catch (e) {
-      print('Error fetching cart items: $e');
+      logger.e('Error fetching cart items: $e');
       return [];
     }
   }
@@ -415,7 +418,7 @@ class SupabaseService {
         return CartItem.fromJson(response, product);
       }
     } catch (e) {
-      print('Error adding to cart: $e');
+      logger.e('Error adding to cart: $e');
       return null;
     }
   }
@@ -436,7 +439,7 @@ class SupabaseService {
 
       return true;
     } catch (e) {
-      print('Error updating cart item quantity: $e');
+      logger.e('Error updating cart item quantity: $e');
       return false;
     }
   }
@@ -447,7 +450,7 @@ class SupabaseService {
       await _client.from('cart_items').delete().eq('id', cartItemId);
       return true;
     } catch (e) {
-      print('Error removing from cart: $e');
+      logger.e('Error removing from cart: $e');
       return false;
     }
   }
@@ -458,7 +461,7 @@ class SupabaseService {
       await _client.from('cart_items').delete().eq('user_id', userId);
       return true;
     } catch (e) {
-      print('Error clearing cart: $e');
+      logger.e('Error clearing cart: $e');
       return false;
     }
   }

@@ -13,17 +13,16 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<OptimizedAppState>(
-      builder: (context, appState, child) {
-        final isFavorite = appState.isFavorite(product.id ?? 0);
-
+    return Selector<OptimizedAppState, bool>(
+      selector: (context, appState) => appState.isFavorite(product.id ?? 0),
+      builder: (context, isFavorite, child) {
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 spreadRadius: 0,
                 blurRadius: 8,
                 offset: const Offset(0, 2),
@@ -64,7 +63,9 @@ class ProductCard extends StatelessWidget {
                           child: GestureDetector(
                             onTap: () {
                               if (product.id != null) {
-                                appState.toggleFavorite(product.id!);
+                                context
+                                    .read<OptimizedAppState>()
+                                    .toggleFavorite(product.id!);
                               }
                             },
                             child: Container(
@@ -75,7 +76,7 @@ class ProductCard extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 1),
                                   ),
@@ -100,7 +101,7 @@ class ProductCard extends StatelessWidget {
                           child: GestureDetector(
                             onTap: () {
                               if (product.id != null) {
-                                _showOptionDialog(context, appState);
+                                _showOptionDialog(context);
                               }
                             },
                             child: Container(
@@ -111,7 +112,7 @@ class ProductCard extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 1),
                                   ),
@@ -225,14 +226,14 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  void _showOptionDialog(BuildContext context, OptimizedAppState appState) {
+  void _showOptionDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => ProductOptionDialog(
         product: product,
         onAddToCart: (size, color, quantity) async {
           final selectedOptions = '$color $size';
-          await appState.addToCart(
+          await context.read<OptimizedAppState>().addToCart(
             product.id!,
             quantity: quantity,
             selectedOptions: selectedOptions,

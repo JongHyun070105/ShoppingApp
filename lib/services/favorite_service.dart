@@ -66,14 +66,14 @@ class FavoriteService extends ChangeNotifier {
       try {
         await SupabaseService.toggleFavorite(productId);
       } catch (e) {
-        print('Error updating favorite in Supabase: $e');
+        logger.e('Error updating favorite in Supabase: $e');
         // 에러 시 원래 상태로 되돌리기
         _favorites[productId] = currentStatus;
         _updateLocalProductLikes(productId, currentStatus, allProducts);
         notifyListeners();
       }
     } catch (e) {
-      print('Error toggling favorite: $e');
+      logger.e('Error toggling favorite: $e');
     }
   }
 
@@ -118,7 +118,7 @@ class FavoriteService extends ChangeNotifier {
       _favoriteProducts = await SupabaseService.getFavoriteProducts();
       notifyListeners();
     } catch (e) {
-      print('Error loading favorite products: $e');
+      logger.e('Error loading favorite products: $e');
     }
   }
 }

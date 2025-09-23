@@ -50,18 +50,22 @@ class _ProductDetailState extends State<ProductDetail>
         _reviews = await SupabaseService.getReviews(widget.product.id!);
 
         // OptimizedAppState에 리뷰 개수 업데이트
-        context.read<OptimizedAppState>().setReviewCount(
-          widget.product.id!,
-          _reviews.length,
-        );
+        if (mounted) {
+          context.read<OptimizedAppState>().setReviewCount(
+            widget.product.id!,
+            _reviews.length,
+          );
+        }
       }
     } catch (e) {
-      print('Error loading reviews: $e');
+      logger.e('Error loading reviews: $e');
       _reviews = []; // 에러 시 빈 리스트
     } finally {
-      setState(() {
-        _isLoadingReviews = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingReviews = false;
+        });
+      }
     }
   }
 
@@ -76,12 +80,14 @@ class _ProductDetailState extends State<ProductDetail>
         _qas = await SupabaseService.getQAs(widget.product.id!);
       }
     } catch (e) {
-      print('Error loading Q&As: $e');
+      logger.e('Error loading Q&As: $e');
       _qas = []; // 에러 시 빈 리스트
     } finally {
-      setState(() {
-        _isLoadingQAs = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingQAs = false;
+        });
+      }
     }
   }
 
@@ -254,7 +260,7 @@ class _ProductDetailState extends State<ProductDetail>
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -634,7 +640,10 @@ class _ProductDetailState extends State<ProductDetail>
           // 구매 완료 다이얼로그 표시 (장바구니에 담지 않음)
           if (context.mounted) {
             Navigator.pop(context); // 옵션 선택 다이얼로그 닫기
-            _showPurchaseCompleteDialog(context, size, color, quantity);
+            // ✅ mounted 체크로 Widget이 여전히 활성화되어 있는지 확인
+            if (mounted) {
+              _showPurchaseCompleteDialog(context, size, color, quantity);
+            }
           }
         },
       ),
@@ -659,7 +668,7 @@ class _ProductDetailState extends State<ProductDetail>
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -693,7 +702,7 @@ class _ProductDetailState extends State<ProductDetail>
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -717,10 +726,7 @@ class _ProductDetailState extends State<ProductDetail>
                     const SizedBox(height: 8),
                     Text(
                       '빠른 시일 내에 배송될 예정입니다',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.white),
                     ),
                   ],
                 ),

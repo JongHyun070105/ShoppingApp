@@ -42,7 +42,7 @@ class CartService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error adding to cart: $e');
+      logger.e('Error adding to cart: $e');
     }
   }
 
@@ -61,7 +61,7 @@ class CartService extends ChangeNotifier {
         }
       }
     } catch (e) {
-      print('Error updating cart item quantity: $e');
+      logger.e('Error updating cart item quantity: $e');
     }
   }
 
@@ -74,7 +74,7 @@ class CartService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error removing from cart: $e');
+      logger.e('Error removing from cart: $e');
     }
   }
 
@@ -87,7 +87,7 @@ class CartService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Error clearing cart: $e');
+      logger.e('Error clearing cart: $e');
     }
   }
 
@@ -97,7 +97,7 @@ class CartService extends ChangeNotifier {
       _cartItems = await SupabaseService.getCartItems(_currentUserId);
       notifyListeners();
     } catch (e) {
-      print('Error loading cart items: $e');
+      logger.e('Error loading cart items: $e');
     }
   }
 

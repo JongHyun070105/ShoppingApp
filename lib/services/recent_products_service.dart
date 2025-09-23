@@ -1,6 +1,9 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/product.dart';
+import 'package:logger/logger.dart';
+
+var logger = Logger(printer: PrettyPrinter());
 
 class RecentProductsService {
   static const String _recentProductsKey = 'recent_products';
@@ -11,7 +14,7 @@ class RecentProductsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final recentProductsJson = prefs.getStringList(_recentProductsKey) ?? [];
-      
+
       // 기존 상품들을 Product 객체로 변환
       List<Product> recentProducts = recentProductsJson
           .map((json) => Product.fromJson(jsonDecode(json)))
@@ -19,10 +22,10 @@ class RecentProductsService {
 
       // 중복 제거 (같은 ID의 상품이 있으면 제거)
       recentProducts.removeWhere((p) => p.id == product.id);
-      
+
       // 새 상품을 맨 앞에 추가
       recentProducts.insert(0, product);
-      
+
       // 최대 개수 제한
       if (recentProducts.length > _maxRecentProducts) {
         recentProducts = recentProducts.take(_maxRecentProducts).toList();
@@ -32,10 +35,10 @@ class RecentProductsService {
       final updatedJson = recentProducts
           .map((product) => jsonEncode(product.toJson()))
           .toList();
-      
+
       await prefs.setStringList(_recentProductsKey, updatedJson);
     } catch (e) {
-      print('Error adding recent product: $e');
+      logger.e('Error adding recent product: $e');
     }
   }
 
@@ -44,12 +47,12 @@ class RecentProductsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final recentProductsJson = prefs.getStringList(_recentProductsKey) ?? [];
-      
+
       return recentProductsJson
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
     } catch (e) {
-      print('Error getting recent products: $e');
+      logger.e('Error getting recent products: $e');
       return [];
     }
   }
@@ -60,7 +63,7 @@ class RecentProductsService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_recentProductsKey);
     } catch (e) {
-      print('Error clearing recent products: $e');
+      logger.e('Error clearing recent products: $e');
     }
   }
 
@@ -69,7 +72,7 @@ class RecentProductsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final recentProductsJson = prefs.getStringList(_recentProductsKey) ?? [];
-      
+
       List<Product> recentProducts = recentProductsJson
           .map((json) => Product.fromJson(jsonDecode(json)))
           .toList();
@@ -79,10 +82,10 @@ class RecentProductsService {
       final updatedJson = recentProducts
           .map((product) => jsonEncode(product.toJson()))
           .toList();
-      
+
       await prefs.setStringList(_recentProductsKey, updatedJson);
     } catch (e) {
-      print('Error removing recent product: $e');
+      logger.e('Error removing recent product: $e');
     }
   }
 }
