@@ -8,12 +8,12 @@ class HomeTabBar extends StatelessWidget implements PreferredSizeWidget {
   const HomeTabBar({super.key, required this.tabController});
 
   @override
-  Size get preferredSize => const Size.fromHeight(50);
+  Size get preferredSize => const Size.fromHeight(40);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50,
+      height: 40,
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
@@ -22,8 +22,13 @@ class HomeTabBar extends StatelessWidget implements PreferredSizeWidget {
         controller: tabController,
         labelColor: const Color(AppConstants.primaryColorValue),
         unselectedLabelColor: Colors.grey,
-        indicatorColor: const Color(AppConstants.primaryColorValue),
-        indicatorWeight: 2,
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(
+            color: Color(AppConstants.primaryColorValue),
+            width: 3,
+          ),
+          insets: EdgeInsets.symmetric(horizontal: 0),
+        ),
         tabs: const [
           Tab(text: '홈'),
           Tab(text: '랭킹'),
@@ -32,4 +37,3 @@ class HomeTabBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 }
-

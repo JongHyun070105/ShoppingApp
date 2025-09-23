@@ -19,7 +19,7 @@ class PopularProductsSection extends StatelessWidget {
             : '$selectedCategory 인기상품';
 
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

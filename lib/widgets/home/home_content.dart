@@ -15,18 +15,54 @@ class HomeContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<OptimizedAppState>(
       builder: (context, appState, child) {
-        if (appState.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+        // 초기 로딩 시 카테고리 그리드만 먼저 표시
+        if (appState.isLoading && appState.allProducts.isEmpty) {
+          return NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification notification) {
+              if (notification is ScrollStartNotification ||
+                  notification is ScrollUpdateNotification ||
+                  notification is ScrollEndNotification) {
+                return true;
+              }
+              return false;
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildPromoSection(),
+                  _buildCategorySection(), // 카테고리는 먼저 표시
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              _buildPromoSection(),
-              _buildCategorySection(),
-              _buildPopularProductsSection(appState),
-            ],
+        return NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification notification) {
+            // 스크롤 이벤트만 차단하고 터치 이벤트는 전달
+            if (notification is ScrollStartNotification ||
+                notification is ScrollUpdateNotification ||
+                notification is ScrollEndNotification) {
+              return true; // 스크롤 이벤트 차단
+            }
+            return false; // 다른 이벤트는 전달
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                _buildPromoSection(),
+                _buildCategorySection(),
+                _buildPopularProductsSection(appState),
+              ],
+            ),
           ),
         );
       },

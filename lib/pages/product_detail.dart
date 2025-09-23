@@ -140,14 +140,34 @@ class _ProductDetailState extends State<ProductDetail>
                 child: Column(
                   children: [
                     // 상품 이미지
-                    Container(
+                    SizedBox(
                       height: 300,
                       width: double.infinity,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: NetworkImage(widget.product.imageUrl),
-                          fit: BoxFit.cover,
-                        ),
+                      child: Image.network(
+                        widget.product.imageUrl,
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: Image.network(
+                              'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
+                              width: double.infinity,
+                              height: 300,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
                       ),
                     ),
 
@@ -741,15 +761,26 @@ class _ProductDetailState extends State<ProductDetail>
                     // 상품 이미지와 정보
                     Row(
                       children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(
-                              image: NetworkImage(widget.product.imageUrl),
-                              fit: BoxFit.cover,
-                            ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            widget.product.imageUrl,
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 60,
+                                height: 60,
+                                color: Colors.grey[300],
+                                child: Image.network(
+                                  'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(width: 16),

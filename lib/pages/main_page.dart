@@ -67,23 +67,29 @@ class _MainPageState extends State<MainPage>
   }
 
   Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      currentIndex: _currentIndex,
-      onTap: (index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      selectedItemColor: const Color(AppConstants.primaryColorValue),
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: '검색'),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: '즐겨찾기'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: '프로필'),
-      ],
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+      ),
+      child: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.white,
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        selectedItemColor: const Color(AppConstants.primaryColorValue),
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: '검색'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: '즐겨찾기'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: '프로필'),
+        ],
+      ),
     );
   }
 }

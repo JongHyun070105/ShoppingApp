@@ -15,10 +15,24 @@ class RankingContent extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [_buildHeader(), _buildPopularProductsSection(appState)],
+        return NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification notification) {
+            // 스크롤 이벤트만 차단하고 터치 이벤트는 전달
+            if (notification is ScrollStartNotification ||
+                notification is ScrollUpdateNotification ||
+                notification is ScrollEndNotification) {
+              return true; // 스크롤 이벤트 차단
+            }
+            return false; // 다른 이벤트는 전달
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                _buildHeader(),
+                _buildPopularProductsSection(appState),
+              ],
+            ),
           ),
         );
       },

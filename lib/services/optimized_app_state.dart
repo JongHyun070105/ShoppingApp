@@ -77,11 +77,17 @@ class OptimizedAppState extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // 1단계: 기본 상품 데이터 로드 (우선순위 높음)
       await _loadProducts();
-      await _loadCartItems();
-      await _loadFavoriteProducts();
-      await _initializeReviewCounts();
-      await _loadUserPreferences();
+      notifyListeners(); // 상품 데이터가 로드되면 UI 업데이트
+
+      // 2단계: 나머지 데이터들 병렬로 로드
+      await Future.wait([
+        _loadCartItems(),
+        _loadFavoriteProducts(),
+        _initializeReviewCounts(),
+        _loadUserPreferences(),
+      ]);
     } catch (e) {
       logger.e('Error initializing app: $e');
     } finally {

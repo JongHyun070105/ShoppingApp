@@ -44,52 +44,82 @@ class ProductCard extends StatelessWidget {
                       ),
                     );
                   },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
-                      ),
-                      image: DecorationImage(
-                        image: NetworkImage(product.imageUrl),
-                        fit: BoxFit.cover,
-                      ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(8),
                     ),
                     child: Stack(
                       children: [
+                        Image.network(
+                          product.imageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[300],
+                              child: Image.network(
+                                'https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=',
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                         // 즐겨찾기 버튼
                         Positioned(
                           bottom: 8,
                           right: 8,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (product.id != null) {
-                                context
-                                    .read<OptimizedAppState>()
-                                    .toggleFavorite(product.id!);
-                              }
-                            },
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                isFavorite
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: isFavorite
-                                    ? Colors.red
-                                    : Colors.grey[600],
-                                size: 16,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                if (product.id != null) {
+                                  context
+                                      .read<OptimizedAppState>()
+                                      .toggleFavorite(product.id!);
+                                }
+                              },
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: isFavorite
+                                      ? Colors.red
+                                      : Colors.grey[600],
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),
@@ -98,30 +128,38 @@ class ProductCard extends StatelessWidget {
                         Positioned(
                           bottom: 8,
                           right: 44,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (product.id != null) {
-                                _showOptionDialog(context);
-                              }
-                            },
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.shopping_cart_outlined,
-                                color: Colors.grey[600],
-                                size: 16,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                if (product.id != null) {
+                                  _showOptionDialog(context);
+                                }
+                              },
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              borderRadius: BorderRadius.circular(14),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.shopping_cart_outlined,
+                                  color: Colors.grey[600],
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ),

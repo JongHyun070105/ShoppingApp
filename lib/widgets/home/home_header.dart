@@ -9,7 +9,7 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
   const HomeHeader({super.key});
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 50);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +29,19 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildNotificationButton() {
-    return IconButton(
-      icon: const Icon(Icons.notifications_outlined, color: Colors.black),
-      onPressed: () {
-        // TODO: 알림 기능 구현
-      },
+    return Builder(
+      builder: (context) => Theme(
+        data: Theme.of(context).copyWith(
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.notifications_outlined, color: Colors.black),
+          onPressed: () {
+            // TODO: 알림 기능 구현
+          },
+        ),
+      ),
     );
   }
 
@@ -42,17 +50,25 @@ class HomeHeader extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, appState, child) {
         return Stack(
           children: [
-            IconButton(
-              icon: const Icon(
-                Icons.shopping_cart_outlined,
-                color: Colors.black,
+            Builder(
+              builder: (context) => Theme(
+                data: Theme.of(context).copyWith(
+                  splashColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.shopping_cart_outlined,
+                    color: Colors.black,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CartPage()),
+                    );
+                  },
+                ),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CartPage()),
-                );
-              },
             ),
             if (appState.cartItemCount > 0)
               Positioned(
