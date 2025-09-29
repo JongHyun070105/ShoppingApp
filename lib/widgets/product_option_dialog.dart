@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shopping_application/utils/price_formatter.dart';
 import '../models/product.dart';
 
 class ProductOptionDialog extends StatefulWidget {
@@ -116,7 +117,7 @@ class _ProductOptionDialogState extends State<ProductOptionDialog> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '₩${widget.product.price}',
+                          '₩${PriceFormatter.formatPriceString(widget.product.price)}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

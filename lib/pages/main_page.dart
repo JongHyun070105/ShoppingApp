@@ -22,6 +22,7 @@ class _MainPageState extends State<MainPage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   int _currentIndex = 0;
   late TabController _tabController;
+  bool isMore = false;
   late ScrollController _homeScrollController;
 
   @override

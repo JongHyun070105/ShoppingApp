@@ -13,6 +13,13 @@ class OptimizedAppState extends ChangeNotifier {
   String _selectedCategory = '전체';
   bool _isLoading = false;
 
+  // 페이지네이션 관련 상태
+  static const int _pageSize = 20;
+  int _currentPage = 0;
+  bool _hasMoreData = true;
+  bool _isLoadingMore = false;
+  int _totalProductsCount = 0;
+
   // 즐겨찾기 관련 상태 (별도 관리)
   final Map<int, bool> _favorites = {};
   List<Product> _favoriteProducts = [];
@@ -34,6 +41,12 @@ class OptimizedAppState extends ChangeNotifier {
   bool get isLoading => _isLoading;
   int get cartItemCount =>
       _cartItems.fold(0, (sum, item) => sum + item.quantity);
+
+  // 페이지네이션 관련 Getters
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMoreData => _hasMoreData;
+  int get totalProductsCount => _totalProductsCount;
+  int get currentPage => _currentPage;
 
   // 즐겨찾기 관련
   bool isFavorite(int productId) => _favorites[productId] ?? false;
@@ -96,26 +109,61 @@ class OptimizedAppState extends ChangeNotifier {
     }
   }
 
-  // 상품 로드 (캐시 활용)
-  Future<void> _loadProducts() async {
+  // 상품 로드 (서버 페이지네이션)
+  Future<void> _loadProducts({bool isRefresh = false}) async {
     try {
-      if (_cachedProducts.containsKey(_selectedCategory)) {
+      if (isRefresh) {
+        _currentPage = 0;
+        _hasMoreData = true;
         _allProducts.clear();
-        _allProducts.addAll(_cachedProducts[_selectedCategory]!);
-        return;
+        _cachedProducts.clear();
       }
 
-      final products = await SupabaseService.getAllProducts();
-      _allProducts.clear();
-      _allProducts.addAll(products);
+      // 첫 페이지인 경우에만 총 개수 조회
+      if (_currentPage == 0) {
+        _totalProductsCount = await SupabaseService.getTotalProductsCount(
+          category: _selectedCategory == '전체' ? null : _selectedCategory,
+        );
+      }
 
-      // 카테고리별 캐시 저장
-      _cachedProducts[_selectedCategory] = List.from(products);
+      // 서버에서 직접 페이지네이션된 데이터 가져오기
+      final products = await SupabaseService.getProductsPaginated(
+        offset: _currentPage * _pageSize,
+        limit: _pageSize,
+        category: _selectedCategory == '전체' ? null : _selectedCategory,
+      );
 
-      // 즐겨찾기 상태 초기화
-      _initializeFavorites();
+      if (products.isNotEmpty) {
+        _allProducts.addAll(products);
+        _currentPage++;
+
+        // 서버에서 받은 데이터가 페이지 크기보다 적으면 더 이상 데이터가 없음
+        _hasMoreData = products.length >= _pageSize;
+      } else {
+        _hasMoreData = false;
+      }
+
+      // 즐겨찾기 상태 초기화 (첫 페이지인 경우에만)
+      if (_currentPage == 1) {
+        _initializeFavorites();
+      }
     } catch (e) {
       logger.e('Error loading products: $e');
+    }
+  }
+
+  // 더 많은 상품 로드 (무한 스크롤용)
+  Future<void> loadMoreProducts() async {
+    if (_isLoadingMore || !_hasMoreData) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      await _loadProducts();
+    } finally {
+      _isLoadingMore = false;
+      notifyListeners();
     }
   }
 
@@ -191,43 +239,15 @@ class OptimizedAppState extends ChangeNotifier {
     }
   }
 
-  // 카테고리 필터링
+  // 카테고리 필터링 (서버에서 처리되므로 클라이언트 필터링 제거)
   List<Product> _getFilteredProducts() {
-    if (_selectedCategory == '전체') {
-      return _allProducts;
-    }
-    return _allProducts
-        .where((product) => product.category == _selectedCategory)
-        .toList();
+    return _allProducts; // 서버에서 이미 필터링된 데이터
   }
 
-  // 인기 상품 정렬 (캐시된 값 사용)
+  // 인기 상품 정렬 (서버에서 이미 정렬된 데이터 사용)
   List<Product> _getPopularProducts() {
-    var filteredProducts = _getFilteredProducts();
-
-    // 인기도 점수 계산하여 정렬
-    filteredProducts.sort((a, b) {
-      final aId = a.id;
-      final bId = b.id;
-
-      if (aId == null || bId == null) return 0;
-
-      // 좋아요 개수와 리뷰 개수 (캐시된 값 사용)
-      final aLikes = int.tryParse(a.likes) ?? 0;
-      final bLikes = int.tryParse(b.likes) ?? 0;
-
-      final aReviews = _reviewCounts[aId] ?? 0;
-      final bReviews = _reviewCounts[bId] ?? 0;
-
-      // 인기도 점수 계산 (좋아요 * 2 + 리뷰 * 1)
-      final aPopularity = (aLikes * 2) + aReviews;
-      final bPopularity = (bLikes * 2) + bReviews;
-
-      // 내림차순 정렬 (인기 순)
-      return bPopularity.compareTo(aPopularity);
-    });
-
-    return filteredProducts;
+    // 서버에서 이미 created_at 기준으로 정렬된 데이터를 받으므로 그대로 사용
+    return _getFilteredProducts();
   }
 
   // 카테고리 변경
@@ -244,14 +264,8 @@ class OptimizedAppState extends ChangeNotifier {
       logger.e('Error saving category preference: $e');
     }
 
-    // 캐시된 데이터가 있으면 사용, 없으면 새로 로드
-    if (_cachedProducts.containsKey(category)) {
-      _allProducts.clear();
-      _allProducts.addAll(_cachedProducts[category]!);
-      notifyListeners();
-    } else {
-      await _loadProducts();
-    }
+    // 카테고리 변경 시 새로 로드 (페이지네이션)
+    await _loadProducts(isRefresh: true);
   }
 
   // 즐겨찾기 토글 (최적화된 버전)
@@ -394,10 +408,17 @@ class OptimizedAppState extends ChangeNotifier {
     }
   }
 
-  // 새로고침
+  // 새로고침 (Pull to Refresh용)
   Future<void> refresh() async {
-    _cachedProducts.clear(); // 캐시 클리어
-    await initialize();
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _loadProducts(isRefresh: true);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // 최근 상품 추가

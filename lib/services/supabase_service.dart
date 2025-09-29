@@ -26,6 +26,50 @@ class SupabaseService {
     }
   }
 
+  // 페이지네이션으로 상품 조회
+  static Future<List<Product>> getProductsPaginated({
+    required int offset,
+    required int limit,
+    String? category,
+  }) async {
+    try {
+      // 서버에서 직접 페이지네이션과 필터링 수행
+      var query = _client.from('products').select();
+
+      // 카테고리 필터링 (서버에서)
+      if (category != null && category != '전체') {
+        query = query.eq('category', category);
+      }
+
+      // 정렬 및 페이지네이션 적용
+      final response = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+      return response.map<Product>((json) => Product.fromJson(json)).toList();
+    } catch (e) {
+      logger.e('Error fetching products paginated: $e');
+      return [];
+    }
+  }
+
+  // 총 상품 개수 조회
+  static Future<int> getTotalProductsCount({String? category}) async {
+    try {
+      // 서버에서 직접 개수 조회
+      var query = _client.from('products').select('id');
+
+      if (category != null && category != '전체') {
+        query = query.eq('category', category);
+      }
+
+      final response = await query;
+      return response.length;
+    } catch (e) {
+      logger.e('Error fetching total products count: $e');
+      return 0;
+    }
+  }
+
   // 즐겨찾기 상품 조회
   static Future<List<Product>> getFavoriteProducts() async {
     try {

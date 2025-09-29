@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
+import '../services/optimized_app_state.dart';
 import 'product_card.dart';
 
-/// 최적화된 상품 그리드 위젯
+/// 최적화된 상품 그리드 위젯 (무한 스크롤 지원)
 class OptimizedProductGrid extends StatelessWidget {
   final List<Product> products;
   final int crossAxisCount;
@@ -27,26 +29,32 @@ class OptimizedProductGrid extends StatelessWidget {
       return const _EmptyState();
     }
 
-    return Padding(
-      padding: padding ?? const EdgeInsets.all(16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        // 그리드 설정
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: crossAxisSpacing,
-          mainAxisSpacing: mainAxisSpacing,
-          childAspectRatio: childAspectRatio,
-        ),
-
-        itemCount: products.length,
-        itemBuilder: (context, index) {
-          final product = products[index];
-          // const 생성자 사용으로 불필요한 리빌드 방지
-          return ProductCard(product: product);
-        },
-      ),
+    return Consumer<OptimizedAppState>(
+      builder: (context, appState, child) {
+        return Padding(
+          padding: padding ?? const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                // 그리드 설정
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: crossAxisSpacing,
+                  mainAxisSpacing: mainAxisSpacing,
+                  childAspectRatio: childAspectRatio,
+                ),
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return ProductCard(product: product);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

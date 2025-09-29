@@ -47,25 +47,45 @@ class HomeContent extends StatelessWidget {
           );
         }
 
-        return NotificationListener<ScrollNotification>(
-          onNotification: (ScrollNotification notification) {
-            // 스크롤 이벤트만 차단하고 터치 이벤트는 전달
-            if (notification is ScrollStartNotification ||
-                notification is ScrollUpdateNotification ||
-                notification is ScrollEndNotification) {
-              return true; // 스크롤 이벤트 차단
+        return RefreshIndicator(
+          onRefresh: () async {
+            // Pull to Refresh - 데이터 새로고침
+            await appState.refresh();
+            // 새로고침 후 스크롤을 맨 위로 이동
+            if (scrollController?.hasClients == true) {
+              scrollController?.animateTo(
+                0.0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
             }
-            return false; // 다른 이벤트는 전달
           },
-          child: SingleChildScrollView(
-            controller: scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              children: [
-                _buildPromoSection(),
-                _buildCategorySection(),
-                _buildPopularProductsSection(appState),
-              ],
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification notification) {
+              // 무한 스크롤 감지
+              if (notification is ScrollUpdateNotification) {
+                final position = notification.metrics;
+                if (position.pixels >= position.maxScrollExtent - 200) {
+                  // 스크롤이 끝에서 200px 전에 도달하면 더 많은 데이터 로드
+                  if (appState.hasMoreData && !appState.isLoadingMore) {
+                    appState.loadMoreProducts();
+                  }
+                }
+              }
+              return false; // 이벤트를 계속 전달
+            },
+            child: SingleChildScrollView(
+              controller: scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildPromoSection(),
+                  _buildCategorySection(),
+                  _buildPopularProductsSection(appState),
+                  // 하단 로딩 인디케이터
+                  _buildBottomLoadingIndicator(appState),
+                ],
+              ),
             ),
           ),
         );
@@ -93,6 +113,41 @@ class HomeContent extends StatelessWidget {
 
   Widget _buildPopularProductsSection(OptimizedAppState appState) {
     return PopularProductsSection(products: appState.popularProducts);
+  }
+
+  Widget _buildBottomLoadingIndicator(OptimizedAppState appState) {
+    return Column(
+      children: [
+        // 무한 스크롤 로딩 인디케이터
+        if (appState.isLoadingMore)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 8),
+                  Text(
+                    '더 많은 상품을 불러오는 중...',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        // 더 이상 데이터가 없을 때 표시
+        if (!appState.hasMoreData && appState.allProducts.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(
+              child: Text(
+                '모든 상품을 불러왔습니다',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   List<Map<String, dynamic>> _getCategoryData() {

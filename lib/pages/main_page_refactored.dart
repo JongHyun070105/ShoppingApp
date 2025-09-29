@@ -19,7 +19,7 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+  with TickerProviderStateMixin, WidgetsBindingObserver {
   int _currentIndex = 0;
   late TabController _tabController;
 
