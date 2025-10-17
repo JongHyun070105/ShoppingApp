@@ -14,10 +14,17 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
 
   // 검색 상태를 페이지 내에서 관리
   String _searchQuery = '';
   List<Product> _searchResults = [];
+  List<Product> _displayedResults = [];
+
+  // 페이지네이션 관련
+  static const int _pageSize = 20;
+  int _currentPage = 0;
+  bool _isLoadingMore = false;
 
   List<String> recentSearches = ["티셔츠", "후드티", "나이키", "가디건", "자켓", "청바지"];
 
@@ -38,13 +45,49 @@ class _SearchPageState extends State<SearchPage> {
   void initState() {
     super.initState();
     _searchFocusNode.addListener(_onFocusChange);
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      _loadMoreResults();
+    }
+  }
+
+  void _loadMoreResults() {
+    if (_isLoadingMore) return;
+    if (_displayedResults.length >= _searchResults.length) return;
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    // 다음 페이지 데이터 로드
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _currentPage++;
+          final startIndex = _currentPage * _pageSize;
+          final endIndex = (startIndex + _pageSize).clamp(
+            0,
+            _searchResults.length,
+          );
+          _displayedResults.addAll(
+            _searchResults.sublist(startIndex, endIndex),
+          );
+          _isLoadingMore = false;
+        });
+      }
+    });
   }
 
   void _onFocusChange() {
@@ -54,12 +97,15 @@ class _SearchPageState extends State<SearchPage> {
   void _performSearch() {
     final query = _searchController.text.trim();
 
+    // context.read는 setState 밖에서 호출해야 함
+    final allProducts = context.read<OptimizedAppState>().allProducts;
+
     setState(() {
       _searchQuery = query;
+      _currentPage = 0;
 
       if (query.isNotEmpty) {
         // OptimizedAppState에서 모든 상품을 가져와서 검색
-        final allProducts = context.read<OptimizedAppState>().allProducts;
         _searchResults = allProducts.where((product) {
           return product.productName.toLowerCase().contains(
                 query.toLowerCase(),
@@ -68,6 +114,9 @@ class _SearchPageState extends State<SearchPage> {
               (product.category?.toLowerCase().contains(query.toLowerCase()) ??
                   false);
         }).toList();
+
+        // 처음 20개만 표시
+        _displayedResults = _searchResults.take(_pageSize).toList();
 
         // 최근 검색어에 추가 (중복 제거)
         if (!recentSearches.contains(query)) {
@@ -78,6 +127,7 @@ class _SearchPageState extends State<SearchPage> {
         }
       } else {
         _searchResults = [];
+        _displayedResults = [];
       }
     });
   }
@@ -98,6 +148,8 @@ class _SearchPageState extends State<SearchPage> {
     setState(() {
       _searchQuery = '';
       _searchResults = [];
+      _displayedResults = [];
+      _currentPage = 0;
     });
   }
 
@@ -182,6 +234,7 @@ class _SearchPageState extends State<SearchPage> {
                       ),
                     )
                   : GridView.builder(
+                      controller: _scrollController,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
@@ -190,10 +243,21 @@ class _SearchPageState extends State<SearchPage> {
                             mainAxisSpacing: 12,
                             childAspectRatio: 0.6,
                           ),
-                      itemCount: _searchResults.length,
+                      itemCount:
+                          _displayedResults.length + (_isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
-                        final product = _searchResults[index];
-                        return ProductCard(product: product);
+                        if (index < _displayedResults.length) {
+                          final product = _displayedResults[index];
+                          return ProductCard(product: product);
+                        } else {
+                          // 로딩 인디케이터
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
                       },
                     ),
             ),
